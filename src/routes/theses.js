@@ -37,6 +37,8 @@ router.put(
   ThesisController.update
 );
 
+
+
 router.delete(
   "/:id",
   authenticate,
