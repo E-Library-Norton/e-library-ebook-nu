@@ -18,7 +18,6 @@ router.get("/", queryValidation.pagination, ThesisController.getAll);
 router.get("/:id", idValidation, ThesisController.getById);
 router.post("/:id/view", idValidation, ThesisController.incrementView);
 router.post("/:id/download", idValidation, ThesisController.download);
-
 // Protected routes (Admin & Librarian)
 router.post(
   "/",
