@@ -1,0 +1,618 @@
+# ============================================
+# FILE: docker-compose.yml
+# ============================================
+
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:17
+    container_name: elibrary_db
+    restart: always
+    environment:
+      POSTGRES_USER: samnang
+      POSTGRES_PASSWORD: samnang@77
+      POSTGRES_DB: elibrary_db
+    ports:
+      - "6000:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - elibrary_network
+
+  # # Node.js API
+  # api:
+  #   build: .
+  #   container_name: elibrary_api
+  #   restart: always
+  #   environment:
+  #     NODE_ENV: production
+  #     DB_HOST: postgres
+  #     DB_PORT: 5432
+  #     DB_NAME: ${DB_NAME}
+  #     DB_USER: ${DB_USER}
+  #     DB_PASSWORD: ${DB_PASSWORD}
+  #     JWT_SECRET: ${JWT_SECRET}
+  #     JWT_EXPIRE: ${JWT_EXPIRE}
+  #   ports:
+  #     - "${PORT}:5000"
+  #   depends_on:
+  #     - postgres
+  #   volumes:
+  #     - ./uploads:/app/uploads
+  #     - ./logs:/app/logs
+  #   networks:
+  #     - elibrary_network
+
+  # pgAdmin (Optional - for database management)
+  # pgadmin:
+  #   image: dpage/pgadmin4:latest
+  #   container_name: elibrary_pgadmin
+  #   restart: always
+  #   environment:
+  #     PGADMIN_DEFAULT_EMAIL: admin@elibrary.com
+  #     PGADMIN_DEFAULT_PASSWORD: admin123
+  #   ports:
+  #     - "5050:80"
+  #   depends_on:
+  #     - postgres
+  #   networks:
+  #     - elibrary_network
+
+volumes:
+  postgres_data:
+
+networks:
+  elibrary_network:
+    driver: bridge
+
+
+# # ============================================
+# # FILE: Dockerfile
+# # ============================================
+
+# FROM node:18-alpine
+
+# # Set working directory
+# WORKDIR /app
+
+# # Copy package files
+# COPY package*.json ./
+
+# # Install dependencies
+# RUN npm ci --only=production
+
+# # Copy application files
+# COPY . .
+
+# # Create upload directories
+# RUN mkdir -p uploads/covers uploads/pdfs uploads/audios uploads/videos logs
+
+# # Expose port
+# EXPOSE 5000
+
+# # Health check
+# HEALTHCHECK --interval=30s --timeout=3s --start-period=40s \
+#   CMD node -e "require('http').get('http://localhost:5000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+
+# # Start application
+# CMD ["npm", "start"]
+
+
+# # ============================================
+# # FILE: .dockerignore
+# # ============================================
+
+# node_modules
+# npm-debug.log
+# .env
+# .env.local
+# .git
+# .gitignore
+# README.md
+# .DS_Store
+# uploads/*
+# logs/*
+# test
+# coverage
+
+
+# # ============================================
+# # FILE: .env.production (Template)
+# # ============================================
+
+# NODE_ENV=production
+# PORT=5000
+
+# # Database
+# DB_HOST=postgres
+# DB_PORT=5432
+# DB_NAME=elibrary_prod
+# DB_USER=elibrary_user
+# DB_PASSWORD=your_secure_password_here
+
+# # JWT
+# JWT_SECRET=your_very_secure_secret_key_min_32_characters
+# JWT_EXPIRE=7d
+
+# # File Upload
+# MAX_FILE_SIZE=52428800
+# UPLOAD_PATH=./uploads
+
+# # Rate Limiting
+# RATE_LIMIT_WINDOW=15
+# RATE_LIMIT_MAX=100
+
+# # CORS (comma-separated origins)
+# ALLOWED_ORIGINS=https://yourdomain.com,https://www.yourdomain.com
+
+
+# # ============================================
+# # DEPLOYMENT GUIDE - Markdown Format
+# # ============================================
+
+# ---
+# # 🚀 E-Library Backend Deployment Guide
+
+# ## Table of Contents
+# 1. [Local Development Setup](#local-development)
+# 2. [Docker Deployment](#docker-deployment)
+# 3. [Heroku Deployment](#heroku-deployment)
+# 4. [AWS EC2 Deployment](#aws-deployment)
+# 5. [DigitalOcean Deployment](#digitalocean-deployment)
+# 6. [Production Checklist](#production-checklist)
+
+# ---
+
+# ## 📦 Local Development Setup
+
+# ### Prerequisites
+# - Node.js v18+
+# - PostgreSQL v12+
+# - Git
+
+# ### Steps
+
+# 1. **Clone Repository**
+# ```bash
+# git clone <your-repo-url>
+# cd elibrary-backend
+# ```
+
+# 2. **Install Dependencies**
+# ```bash
+# npm install
+# ```
+
+# 3. **Setup PostgreSQL**
+# ```bash
+# # Login to PostgreSQL
+# psql -U postgres
+
+# # Create database
+# CREATE DATABASE elibrary;
+
+# # Create user (optional)
+# CREATE USER elibrary_user WITH PASSWORD 'your_password';
+# GRANT ALL PRIVILEGES ON DATABASE elibrary TO elibrary_user;
+
+# # Exit
+# \q
+# ```
+
+# 4. **Configure Environment**
+# ```bash
+# cp .env.example .env
+# # Edit .env with your credentials
+# ```
+
+# 5. **Create Upload Directories**
+# ```bash
+# mkdir -p uploads/{covers,pdfs,audios,videos} logs
+# ```
+
+# 6. **Run Application**
+# ```bash
+# # Development mode
+# npm run dev
+
+# # Production mode
+# npm start
+# ```
+
+# 7. **Seed Database (Optional)**
+# ```bash
+# npm run seed
+# ```
+
+# ---
+
+# ## 🐳 Docker Deployment
+
+# ### Prerequisites
+# - Docker Desktop installed
+# - Docker Compose installed
+
+# ### Steps
+
+# 1. **Create .env file**
+# ```bash
+# cp .env.example .env
+# # Edit with production values
+# ```
+
+# 2. **Build and Start Containers**
+# ```bash
+# # Build images
+# docker-compose build
+
+# # Start services
+# docker-compose up -d
+
+# # View logs
+# docker-compose logs -f api
+# ```
+
+# 3. **Run Database Migrations**
+# ```bash
+# # The app will auto-create tables on startup
+# # Or manually run:
+# docker-compose exec api npm run seed
+# ```
+
+# 4. **Access Services**
+# - API: http://localhost:5000
+# - pgAdmin: http://localhost:5050
+#   - Email: admin@elibrary.com
+#   - Password: admin123
+
+# 5. **Stop Services**
+# ```bash
+# docker-compose down
+
+# # Remove volumes (careful - deletes data!)
+# docker-compose down -v
+# ```
+
+# ### Useful Docker Commands
+# ```bash
+# # View running containers
+# docker ps
+
+# # View logs
+# docker logs elibrary_api -f
+
+# # Execute commands in container
+# docker exec -it elibrary_api sh
+
+# # Restart service
+# docker-compose restart api
+
+# # Rebuild after code changes
+# docker-compose up -d --build
+# ```
+
+# ---
+
+# ## 🌐 Heroku Deployment
+
+# ### Prerequisites
+# - Heroku CLI installed
+# - Heroku account
+
+# ### Steps
+
+# 1. **Login to Heroku**
+# ```bash
+# heroku login
+# ```
+
+# 2. **Create Heroku App**
+# ```bash
+# heroku create elibrary-api
+# ```
+
+# 3. **Add PostgreSQL Addon**
+# ```bash
+# heroku addons:create heroku-postgresql:mini
+# ```
+
+# 4. **Set Environment Variables**
+# ```bash
+# heroku config:set NODE_ENV=production
+# heroku config:set JWT_SECRET=your_secret_key_here
+# heroku config:set JWT_EXPIRE=7d
+# ```
+
+# 5. **Deploy**
+# ```bash
+# # Initialize git (if not done)
+# git init
+# git add .
+# git commit -m "Initial commit"
+
+# # Deploy to Heroku
+# git push heroku main
+
+# # View logs
+# heroku logs --tail
+
+# # Open app
+# heroku open
+# ```
+
+# 6. **Run Database Seed**
+# ```bash
+# heroku run npm run seed
+# ```
+
+# ### Heroku Configuration Files
+
+# **Procfile**
+# ```
+# web: npm start
+# ```
+
+# **app.json**
+# ```json
+# {
+#   "name": "E-Library API",
+#   "description": "E-Library Backend API",
+#   "repository": "https://github.com/yourusername/elibrary-backend",
+#   "keywords": ["node", "express", "postgresql"],
+#   "addons": ["heroku-postgresql:mini"],
+#   "buildpacks": [
+#     {
+#       "url": "heroku/nodejs"
+#     }
+#   ]
+# }
+# ```
+
+# ---
+
+# ## ☁️ AWS EC2 Deployment
+
+# ### Prerequisites
+# - AWS account
+# - SSH key pair
+
+# ### Steps
+
+# 1. **Launch EC2 Instance**
+# - AMI: Ubuntu 22.04 LTS
+# - Instance Type: t3.small or larger
+# - Security Group: Allow ports 22, 80, 443, 5000
+
+# 2. **Connect to Instance**
+# ```bash
+# ssh -i your-key.pem ubuntu@your-ec2-ip
+# ```
+
+# 3. **Install Dependencies**
+# ```bash
+# # Update system
+# sudo apt update && sudo apt upgrade -y
+
+# # Install Node.js
+# curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+# sudo apt install -y nodejs
+
+# # Install PostgreSQL
+# sudo apt install -y postgresql postgresql-contrib
+
+# # Install Nginx (optional, for reverse proxy)
+# sudo apt install -y nginx
+
+# # Install PM2 (process manager)
+# sudo npm install -g pm2
+# ```
+
+# 4. **Setup PostgreSQL**
+# ```bash
+# sudo -u postgres psql
+
+# CREATE DATABASE elibrary;
+# CREATE USER elibrary_user WITH PASSWORD 'secure_password';
+# GRANT ALL PRIVILEGES ON DATABASE elibrary TO elibrary_user;
+# \q
+# ```
+
+# 5. **Clone and Setup Application**
+# ```bash
+# # Clone repository
+# git clone <your-repo-url>
+# cd elibrary-backend
+
+# # Install dependencies
+# npm ci --production
+
+# # Create .env file
+# nano .env
+# # Add production values
+
+# # Create directories
+# mkdir -p uploads/{covers,pdfs,audios,videos} logs
+# ```
+
+# 6. **Start with PM2**
+# ```bash
+# # Start application
+# pm2 start src/index.js --name elibrary-api
+
+# # Configure auto-restart on reboot
+# pm2 startup
+# pm2 save
+
+# # View logs
+# pm2 logs elibrary-api
+
+# # Monitor
+# pm2 monit
+# ```
+
+# 7. **Configure Nginx (Optional)**
+# ```bash
+# sudo nano /etc/nginx/sites-available/elibrary
+# ```
+
+# ```nginx
+# server {
+#     listen 80;
+#     server_name your-domain.com;
+
+#     location / {
+#         proxy_pass http://localhost:5000;
+#         proxy_http_version 1.1;
+#         proxy_set_header Upgrade $http_upgrade;
+#         proxy_set_header Connection 'upgrade';
+#         proxy_set_header Host $host;
+#         proxy_cache_bypass $http_upgrade;
+#         proxy_set_header X-Real-IP $remote_addr;
+#         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+#     }
+# }
+# ```
+
+# ```bash
+# # Enable site
+# sudo ln -s /etc/nginx/sites-available/elibrary /etc/nginx/sites-enabled/
+# sudo nginx -t
+# sudo systemctl restart nginx
+# ```
+
+# 8. **Setup SSL with Let's Encrypt**
+# ```bash
+# sudo apt install -y certbot python3-certbot-nginx
+# sudo certbot --nginx -d your-domain.com
+# ```
+
+# ---
+
+# ## 🌊 DigitalOcean Deployment
+
+# ### Using App Platform (Easy)
+
+# 1. **Create App**
+# - Go to DigitalOcean App Platform
+# - Connect GitHub repository
+# - Choose branch to deploy
+
+# 2. **Configure**
+# - Detect Node.js automatically
+# - Add PostgreSQL database
+# - Set environment variables
+
+# 3. **Deploy**
+# - Click "Deploy"
+# - Monitor build logs
+# - Access via provided URL
+
+# ### Using Droplet (Manual)
+
+# Similar to AWS EC2 deployment above.
+
+# ---
+
+# ## ✅ Production Checklist
+
+# ### Security
+# - [ ] Change all default passwords
+# - [ ] Use strong JWT secret (32+ characters)
+# - [ ] Enable HTTPS/SSL
+# - [ ] Configure CORS properly
+# - [ ] Set up firewall rules
+# - [ ] Enable rate limiting
+# - [ ] Remove development dependencies
+# - [ ] Set NODE_ENV=production
+# - [ ] Use environment variables for secrets
+# - [ ] Enable database SSL connections
+
+# ### Performance
+# - [ ] Enable gzip compression
+# - [ ] Set up CDN for static files
+# - [ ] Configure caching headers
+# - [ ] Optimize database indexes
+# - [ ] Set up connection pooling
+# - [ ] Monitor memory usage
+# - [ ] Configure PM2 cluster mode
+
+# ### Monitoring
+# - [ ] Set up error logging (e.g., Sentry)
+# - [ ] Configure log rotation
+# - [ ] Set up uptime monitoring
+# - [ ] Configure performance monitoring
+# - [ ] Set up database backups
+# - [ ] Create health check endpoint
+
+# ### Backup
+# - [ ] Automated database backups
+# - [ ] Backup uploaded files
+# - [ ] Test backup restoration
+# - [ ] Document backup procedures
+
+# ### Documentation
+# - [ ] API documentation
+# - [ ] Deployment guide
+# - [ ] Environment variables documentation
+# - [ ] Error codes documentation
+# - [ ] Backup/restore procedures
+
+# ---
+
+# ## 🔧 Common Issues
+
+# ### Database Connection Failed
+# ```bash
+# # Check PostgreSQL is running
+# sudo systemctl status postgresql
+
+# # Check connection string in .env
+# # Ensure database exists
+# psql -U postgres -l
+# ```
+
+# ### Port Already in Use
+# ```bash
+# # Find process using port
+# lsof -i :5000
+
+# # Kill process
+# kill -9 <PID>
+
+# # Or change PORT in .env
+# ```
+
+# ### File Upload Errors
+# ```bash
+# # Check directory permissions
+# ls -la uploads/
+
+# # Fix permissions
+# chmod -R 755 uploads/
+# ```
+
+# ### Out of Memory
+# ```bash
+# # Check memory usage
+# free -m
+
+# # Increase Node.js memory limit
+# node --max-old-space-size=4096 src/index.js
+
+# # Or in PM2
+# pm2 start src/index.js --max-memory-restart 1G
+# ```
+
+# ---
+
+# ## 📚 Additional Resources
+
+# - [Express.js Best Practices](https://expressjs.com/en/advanced/best-practice-performance.html)
+# - [PostgreSQL Performance Tuning](https://wiki.postgresql.org/wiki/Performance_Optimization)
+# - [Node.js Production Best Practices](https://nodejs.org/en/docs/guides/nodejs-docker-webapp/)
+# - [PM2 Documentation](https://pm2.keymetrics.io/docs/usage/quick-start/)
+# - [Nginx Configuration](https://nginx.org/en/docs/)
+
+# ---
