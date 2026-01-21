@@ -1,5 +1,5 @@
 // ============================================
-// FILE: src/controllers/thesisController.js (FIXED)
+// FILE: src/controllers/thesisController.js
 // ============================================
 
 const { Op } = require("sequelize");
@@ -8,7 +8,7 @@ const ResponseFormatter = require("../utils/responseFormatter");
 const Helpers = require("../utils/helpers");
 
 class ThesisController {
-  // Get all theses with pagination and filters
+  // Get all thesis with pagination and filters
   static async getAll(req, res, next) {
     try {
       const {
@@ -16,8 +16,9 @@ class ThesisController {
         limit = 10,
         category,
         year,
+        university,
         search,
-        sortBy = "created_at",
+        sortBy = "id",
         order = "DESC",
       } = req.query;
 
@@ -27,6 +28,7 @@ class ThesisController {
       // Filters
       if (category) where.category = category;
       if (year) where.year = year;
+      if (university) where.university = { [Op.iLike]: `%${university}%` };
       if (search) {
         where[Op.or] = [
           { title: { [Op.iLike]: `%${search}%` } },
@@ -36,45 +38,44 @@ class ThesisController {
         ];
       }
 
-      // Fetch data
+      // Validate sortBy to prevent SQL injection
+      const validSortColumns = ["id", "title", "author", "year", "university", "downloads", "views"];
+      const safeSortBy = validSortColumns.includes(sortBy) ? sortBy : "id";
+
       const { count, rows } = await Thesis.findAndCountAll({
         where,
         limit: parseInt(limit),
         offset: parseInt(offset),
-        order: [[sortBy, order.toUpperCase()]],
+        order: [[safeSortBy, order.toUpperCase()]],
+        raw: true,
       });
 
-      // Format response - FIXED: Added missing fields
-      const theses = rows.map((thesis) => ({
+      const thesis = rows.map((thesis) => ({
         id: thesis.id.toString(),
         title: thesis.title,
         titleKh: thesis.titleKh,
         author: thesis.author,
         authorKh: thesis.authorKh,
-        university: thesis.university,
-        universityKh: thesis.universityKh, // ADDED
         year: thesis.year.toString(),
         cover: thesis.coverUrl,
         category: thesis.category,
-        categoryKh: thesis.categoryKh, // ADDED (if exists in model)
-        tags: thesis.tags,
-        downloads: thesis.downloads,
-        views: thesis.views,
-        createdAt: thesis.createdAt,
-        updatedAt: thesis.updatedAt,
+        categoryKh: thesis.categoryKh,
+        university: thesis.university,
+        universityKh: thesis.universityKh,
+        pages: thesis.pages,
+        downloads: thesis.downloads || 0,
+        views: thesis.views || 0,
       }));
 
       const pagination = ResponseFormatter.paginate(page, limit, count);
-
       return ResponseFormatter.success(
         res,
-        theses,
-        "Theses retrieved successfully",
+        thesis,
+        "thesis retrieved successfully",
         200,
         pagination
       );
     } catch (error) {
-      console.error('Error in getAll:', error);
       next(error);
     }
   }
@@ -94,33 +95,26 @@ class ThesisController {
         titleKh: thesis.titleKh,
         author: thesis.author,
         authorKh: thesis.authorKh,
-        university: thesis.university,
-        universityKh: thesis.universityKh,
-        supervisor: thesis.supervisor, // ADDED
-        supervisorKh: thesis.supervisorKh, // ADDED
-        major: thesis.major, // ADDED
-        majorKh: thesis.majorKh, // ADDED
-        type: thesis.type, // ADDED
         year: thesis.year.toString(),
-        abstract: thesis.abstract,
-        abstractKh: thesis.abstractKh,
-        description: thesis.description,
-        descriptionKh: thesis.descriptionKh,
         cover: thesis.coverUrl,
         pdfUrl: thesis.pdfUrl,
         category: thesis.category,
-        categoryKh: thesis.categoryKh, // ADDED
-        tags: thesis.tags,
-        language: thesis.language,
+        categoryKh: thesis.categoryKh,
+        description: thesis.description,
+        descriptionKh: thesis.descriptionKh,
+        supervisor: thesis.supervisor,
+        supervisorKh: thesis.supervisorKh,
+        major: thesis.major,
+        majorKh: thesis.majorKh,
+        university: thesis.university,
+        universityKh: thesis.universityKh,
         pages: thesis.pages,
+        language: thesis.language,
         fileSize: thesis.fileSize,
-        downloads: thesis.downloads,
-        views: thesis.views,
-        createdAt: thesis.createdAt,
-        updatedAt: thesis.updatedAt,
+        downloads: thesis.downloads || 0,
+        views: thesis.views || 0,
       });
     } catch (error) {
-      console.error('Error in getById:', error);
       next(error);
     }
   }
@@ -128,10 +122,7 @@ class ThesisController {
   // Create new thesis
   static async create(req, res, next) {
     try {
-      const thesisData = {
-        ...req.body,
-        tags: Helpers.parseTags(req.body.tags),
-      };
+      const thesisData = { ...req.body };
 
       // Handle file uploads if present
       if (req.files) {
@@ -153,7 +144,6 @@ class ThesisController {
         201
       );
     } catch (error) {
-      console.error('Error in create:', error);
       next(error);
     }
   }
@@ -167,22 +157,17 @@ class ThesisController {
         return ResponseFormatter.notFound(res, "Thesis not found");
       }
 
-      const updateData = {
-        ...req.body,
-        tags: req.body.tags ? Helpers.parseTags(req.body.tags) : thesis.tags,
-      };
+      const updateData = { ...req.body };
 
       // Handle file uploads
       if (req.files) {
         if (req.files.cover) {
-          // Delete old cover if exists
           if (thesis.coverUrl) {
             await Helpers.deleteFile(`.${thesis.coverUrl}`);
           }
           updateData.coverUrl = `/uploads/covers/${req.files.cover[0].filename}`;
         }
         if (req.files.pdf) {
-          // Delete old PDF if exists
           if (thesis.pdfUrl) {
             await Helpers.deleteFile(`.${thesis.pdfUrl}`);
           }
@@ -199,7 +184,6 @@ class ThesisController {
         "Thesis updated successfully"
       );
     } catch (error) {
-      console.error('Error in update:', error);
       next(error);
     }
   }
@@ -226,16 +210,14 @@ class ThesisController {
       return ResponseFormatter.success(
         res,
         null,
-        "Thesis deleted successfully",
-        204
+        "Thesis deleted successfully"
       );
     } catch (error) {
-      console.error('Error in delete:', error);
       next(error);
     }
   }
 
-  // Download thesis (increment download count)
+  // Download thesis
   static async download(req, res, next) {
     try {
       const thesis = await Thesis.findByPk(req.params.id);
@@ -262,7 +244,6 @@ class ThesisController {
         fileSize: thesis.fileSize,
       });
     } catch (error) {
-      console.error('Error in download:', error);
       next(error);
     }
   }
@@ -280,7 +261,24 @@ class ThesisController {
 
       return ResponseFormatter.success(res, null, "View count updated");
     } catch (error) {
-      console.error('Error in incrementView:', error);
+      next(error);
+    }
+  }
+
+  // Get thesis by category
+  static async getByCategory(req, res, next) {
+    try {
+      const { category } = req.params;
+      const { limit = 10 } = req.query;
+
+      const thesis = await Thesis.findAll({
+        where: { category },
+        limit: parseInt(limit),
+        order: [["id", "DESC"]],
+      });
+
+      return ResponseFormatter.success(res, thesis);
+    } catch (error) {
       next(error);
     }
   }

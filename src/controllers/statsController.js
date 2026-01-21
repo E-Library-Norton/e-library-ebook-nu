@@ -17,7 +17,7 @@ class StatsController {
   static async getOverview(req, res, next) {
     try {
       const [
-        totalTheses,
+        totalthesis,
         totalPublications,
         totalJournals,
         totalAudios,
@@ -37,7 +37,7 @@ class StatsController {
       ]);
 
       return ResponseFormatter.success(res, {
-        totalTheses,
+        totalthesis,
         totalPublications,
         totalJournals,
         totalAudios,
@@ -61,7 +61,7 @@ class StatsController {
     try {
       const { limit = 10 } = req.query;
 
-      const [popularTheses, popularJournals] = await Promise.all([
+      const [popularthesis, popularJournals] = await Promise.all([
         Thesis.findAll({
           order: [["downloads", "DESC"]],
           limit: parseInt(limit),
@@ -89,7 +89,7 @@ class StatsController {
       ]);
 
       return ResponseFormatter.success(res, {
-        popularTheses,
+        popularthesis,
         popularJournals,
       });
     } catch (error) {
@@ -101,7 +101,7 @@ class StatsController {
     try {
       const { limit = 10 } = req.query;
 
-      const [recentTheses, recentJournals] = await Promise.all([
+      const [recentthesis, recentJournals] = await Promise.all([
         Thesis.findAll({
           order: [["createdAt", "DESC"]],
           limit: parseInt(limit),
@@ -129,7 +129,7 @@ class StatsController {
       ]);
 
       return ResponseFormatter.success(res, {
-        recentTheses,
+        recentthesis,
         recentJournals,
       });
     } catch (error) {

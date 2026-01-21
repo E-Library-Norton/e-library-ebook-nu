@@ -1,5 +1,5 @@
 // ============================================
-// FILE: src/routes/theses.js
+// FILE: src/routes/thesis.js
 // ============================================
 
 const express = require("express");
@@ -24,7 +24,7 @@ router.post(
   authenticate,
   authorize("admin", "librarian"),
   uploadThesisFiles,
-  thesisValidation.create,
+  thesisValidation.create,  
   ThesisController.create
 );
 
@@ -36,8 +36,6 @@ router.put(
   thesisValidation.update,
   ThesisController.update
 );
-
-
 
 router.delete(
   "/:id",

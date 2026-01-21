@@ -33,7 +33,7 @@ class SearchController {
 
       // Search in different resources based on type
       if (type === "all" || type === "thesis") {
-        results.theses = await Thesis.findAll({
+        results.thesis = await Thesis.findAll({
           where: searchCondition,
           limit: searchLimit,
           attributes: [

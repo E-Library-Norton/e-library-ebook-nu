@@ -18,12 +18,12 @@ class PublicationController {
         year,
         publisher,
         search,
-        sortBy = "createdAt",
+        sortBy = "id",
         order = "DESC",
       } = req.query;
 
       const offset = (page - 1) * limit;
-      const where = {};
+      const where = {}; 
 
       // Filters
       if (category) where.category = category;
@@ -39,11 +39,16 @@ class PublicationController {
         ];
       }
 
+      // Validate sortBy to prevent SQL injection
+      const validSortColumns = ["id", "title", "author", "year", "publisher", "downloads", "views"];
+      const safeSortBy = validSortColumns.includes(sortBy) ? sortBy : "id";
+
       const { count, rows } = await Publication.findAndCountAll({
         where,
         limit: parseInt(limit),
         offset: parseInt(offset),
-        order: [[sortBy, order.toUpperCase()]],
+        order: [[safeSortBy, order.toUpperCase()]],
+        raw: true,
       });
 
       const publications = rows.map((pub) => ({
@@ -59,8 +64,8 @@ class PublicationController {
         publisher: pub.publisher,
         isbn: pub.isbn,
         pages: pub.pages,
-        downloads: pub.downloads,
-        views: pub.views,
+        downloads: pub.downloads || 0,
+        views: pub.views || 0,
       }));
 
       const pagination = ResponseFormatter.paginate(page, limit, count);
@@ -104,10 +109,8 @@ class PublicationController {
         pages: publication.pages,
         language: publication.language,
         fileSize: publication.fileSize,
-        downloads: publication.downloads,
-        views: publication.views,
-        createdAt: publication.createdAt,
-        updatedAt: publication.updatedAt,
+        downloads: publication.downloads || 0,
+        views: publication.views || 0,
       });
     } catch (error) {
       next(error);
@@ -271,7 +274,7 @@ class PublicationController {
       const publications = await Publication.findAll({
         where: { category },
         limit: parseInt(limit),
-        order: [["createdAt", "DESC"]],
+        order: [["id", "DESC"]],
       });
 
       return ResponseFormatter.success(res, publications);

@@ -22,7 +22,7 @@ app.use("/uploads", express.static("uploads"));
 // Routes
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/categories", require("./routes/categories"));
-app.use("/api/theses", require("./routes/theses"));
+app.use("/api/thesis", require("./routes/thesis"));
 app.use("/api/publications", require("./routes/publications"));
 app.use("/api/journals", require("./routes/journals"));
 app.use("/api/audios", require("./routes/audios"));
